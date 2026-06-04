@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="380" viewBox="0 0 800 380" font-family="SFMono-Regular,Consolas,Menlo,monospace">
+  <rect width="800" height="380" rx="10" fill="#0d1117"/>
+  <text x="24" y="36" font-size="18" font-weight="700" fill="#e6edf3" font-family="system-ui,sans-serif">dt-dashboard-diff</text>
+  <text x="250" y="36" font-size="13" fill="#7d8590" font-family="system-ui,sans-serif">"Service Health" — dev vs prod</text>
+  <rect x="20" y="54" width="760" height="60" rx="8" fill="#161b22" stroke="#30363d"/>
+  <text font-size="12.5" xml:space="preserve">
+    <tspan x="36" y="80" fill="#9aa4b2">metadata change</tspan>
+    <tspan x="36" y="100" fill="#d29922">~ owner: </tspan><tspan fill="#f85149">"team-a"</tspan><tspan fill="#c9d1d9"> → </tspan><tspan fill="#3fb950">"team-b"</tspan>
+  </text>
+  <g font-size="12.5">
+    <rect x="20" y="126" width="760" height="40" rx="8" fill="#16261a" stroke="#2ea043"/>
+    <text x="36" y="151" fill="#3fb950">+ added tile   t3  "Latency p99"  (DATA_EXPLORER)</text>
+    <rect x="20" y="174" width="760" height="40" rx="8" fill="#26161a" stroke="#da3633"/>
+    <text x="36" y="199" fill="#f85149">− removed tile t2  "Notes"  (MARKDOWN)</text>
+    <rect x="20" y="222" width="760" height="80" rx="8" fill="#1d2230" stroke="#1f6feb"/>
+    <text x="36" y="246" fill="#58a6ff">~ changed tile t1  "Error rate"</text>
+    <text x="36" y="268" fill="#9aa4b2" font-size="11.5">query:</text>
+    <text x="92" y="268" fill="#f85149" font-size="11.5">fetch logs | filter status==500</text>
+    <text x="92" y="286" fill="#3fb950" font-size="11.5">fetch logs | filter status&gt;=500</text>
+  </g>
+  <text x="20" y="328" font-size="12.5" fill="#d29922" font-family="SFMono-Regular,monospace">validate(): ⚠ empty-query · duplicate-tile-id · unknown-tile-type · no-tiles</text>
+  <text x="20" y="356" font-size="12.5" fill="#3fb950" font-family="SFMono-Regular,monospace">✓ 7 tests · classic + Platform JSON · turns dashboard drift into a reviewable PR</text>
+</svg>
