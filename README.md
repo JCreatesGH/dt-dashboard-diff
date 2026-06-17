@@ -28,12 +28,25 @@ diff.changedTiles    // per-tile field changes (name/type/query)
 hasChanges(diff)     // gate a deploy on this
 ```
 
+`renderDiff(diff)` turns that into a compact, PR-comment-ready summary.
+
 ## Validate
 
 ```ts
 import { validate } from "dt-dashboard-diff";
 validate(parseDashboard(json));
 // HIGH no-tiles / duplicate-tile-id · MEDIUM unknown-tile-type · LOW empty-query
+```
+
+## CLI
+
+Installing the package adds a `dt-dashboard-diff` command — one file validates, two files diff:
+
+```bash
+$ dt-dashboard-diff dashboard.json                 # validate (exit 1 on a HIGH issue)
+$ dt-dashboard-diff dev.json prod.json             # human-readable diff
+$ dt-dashboard-diff dev.json prod.json --exit-code # exit 1 on any drift (gate CI)
+$ dt-dashboard-diff dev.json prod.json --json      # structured diff
 ```
 
 ## Notes
@@ -46,7 +59,7 @@ Wire it into CI to block accidental dashboard drift between environments.
 ## Development
 
 ```bash
-npm install && npm test    # 7 tests
+npm install && npm test    # 13 tests
 npm run build              # tsc, clean
 ```
 

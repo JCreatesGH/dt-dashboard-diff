@@ -40,3 +40,21 @@ export function hasChanges(d: DashboardDiff): boolean {
   return Object.keys(d.metadata).length > 0 || d.addedTiles.length > 0 ||
          d.removedTiles.length > 0 || d.changedTiles.length > 0;
 }
+
+/** A compact, reviewable text summary of a diff (handy for PR comments). */
+export function renderDiff(d: DashboardDiff): string {
+  if (!hasChanges(d)) return "No changes.";
+  const lines: string[] = [];
+  for (const [k, [before, after]] of Object.entries(d.metadata)) {
+    lines.push(`~ ${k}: ${JSON.stringify(before)} → ${JSON.stringify(after)}`);
+  }
+  for (const t of d.addedTiles) lines.push(`+ tile ${t.id} — ${t.name}`);
+  for (const t of d.removedTiles) lines.push(`- tile ${t.id} — ${t.name}`);
+  for (const c of d.changedTiles) {
+    lines.push(`~ tile ${c.id} — ${c.name}`);
+    for (const [k, [before, after]] of Object.entries(c.fields)) {
+      lines.push(`    ${k}: ${JSON.stringify(before)} → ${JSON.stringify(after)}`);
+    }
+  }
+  return lines.join("\n");
+}

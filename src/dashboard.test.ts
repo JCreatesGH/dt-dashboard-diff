@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { parseDashboard } from "./model";
 import { validate } from "./validate";
-import { diffDashboards, hasChanges } from "./diff";
+import { diffDashboards, hasChanges, renderDiff } from "./diff";
+import { run } from "./cli";
 
 const dev = {
   dashboardMetadata: { name: "Service Health", owner: "team-a", shared: true },
@@ -59,5 +60,45 @@ describe("diffDashboards", () => {
   it("hasChanges is true for a real diff, false for identical", () => {
     expect(hasChanges(d)).toBe(true);
     expect(hasChanges(diffDashboards(parseDashboard(dev), parseDashboard(dev)))).toBe(false);
+  });
+});
+
+describe("renderDiff", () => {
+  it("summarizes metadata, added/removed/changed tiles", () => {
+    const out = renderDiff(diffDashboards(parseDashboard(dev), parseDashboard(prod)));
+    expect(out).toContain("~ owner:");
+    expect(out).toContain("+ tile t3");
+    expect(out).toContain("- tile t2");
+    expect(out).toContain("query:");
+  });
+  it("says so when nothing changed", () => {
+    expect(renderDiff(diffDashboards(parseDashboard(dev), parseDashboard(dev)))).toBe("No changes.");
+  });
+});
+
+describe("cli run()", () => {
+  it("validate mode (one file) exits 1 on a high issue", () => {
+    const r = run([JSON.stringify({ tiles: [] })]);
+    expect(r.code).toBe(1);
+    expect(r.output).toContain("no-tiles");
+  });
+
+  it("validate mode is clean on a good dashboard", () => {
+    const r = run([JSON.stringify(dev)]);
+    expect(r.code).toBe(0);
+    expect(r.output).toContain("no issues");
+  });
+
+  it("diff mode renders a diff; --exit-code returns 1 on changes", () => {
+    const a = JSON.stringify(dev), b = JSON.stringify(prod);
+    expect(run([a, b]).code).toBe(0);                       // informational by default
+    const r = run([a, b], { exitCode: true });
+    expect(r.code).toBe(1);
+    expect(r.output).toContain("+ tile t3");
+  });
+
+  it("diff mode --json emits the structured diff", () => {
+    const parsed = JSON.parse(run([JSON.stringify(dev), JSON.stringify(prod)], { json: true }).output);
+    expect(parsed.addedTiles[0].id).toBe("t3");
   });
 });
