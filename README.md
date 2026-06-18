@@ -24,6 +24,7 @@ const diff = diffDashboards(parseDashboard(devJson), parseDashboard(prodJson));
 diff.metadata        // { owner: ["team-a", "team-b"] }
 diff.addedTiles      // tiles only in prod
 diff.removedTiles    // tiles only in dev
+diff.movedTiles      // same content, new id — a re-key, not an add+remove
 diff.changedTiles    // per-tile field changes (name/type/query)
 hasChanges(diff)     // gate a deploy on this
 ```
@@ -35,7 +36,7 @@ hasChanges(diff)     // gate a deploy on this
 ```ts
 import { validate } from "dt-dashboard-diff";
 validate(parseDashboard(json));
-// HIGH no-tiles / duplicate-tile-id · MEDIUM unknown-tile-type · LOW empty-query
+// HIGH no-tiles / duplicate-tile-id · MEDIUM unknown-tile-type / duplicate-tile-name · LOW empty-query
 ```
 
 ## CLI
@@ -53,13 +54,14 @@ $ dt-dashboard-diff dev.json prod.json --json      # structured diff
 
 - **Tolerant parser** — normalizes both classic and Platform dashboard shapes (tiles as an array or an id-keyed object; `tileType`/`type`/`visualization`).
 - Diffs tiles by **id**, reporting added, removed, and field-level changes — so a tweaked query shows up as a clean before/after.
+- **Re-key detection** — when a tile's id changes but its content is identical (common across re-exports and classic→Platform migrations), it's reported as a single re-key (`» tile re-keyed old → new`) instead of a noisy add+remove pair. The text diff also leads with a one-line summary (`1 added, 1 removed, 1 re-keyed`).
 
 Wire it into CI to block accidental dashboard drift between environments.
 
 ## Development
 
 ```bash
-npm install && npm test    # 13 tests
+npm install && npm test    # 16 tests
 npm run build              # tsc, clean
 ```
 

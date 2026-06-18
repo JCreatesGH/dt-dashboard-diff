@@ -12,9 +12,12 @@ export function validate(d: Dashboard): Issue[] {
   if (d.tiles.length === 0) out.push({ severity: "high", rule: "no-tiles", message: "Dashboard has no tiles." });
 
   const ids = new Set<string>();
+  const names = new Set<string>();
   for (const t of d.tiles) {
     if (ids.has(t.id)) out.push({ severity: "high", rule: "duplicate-tile-id", message: `Duplicate tile id '${t.id}'.` });
     ids.add(t.id);
+    if (names.has(t.name)) out.push({ severity: "medium", rule: "duplicate-tile-name", message: `Duplicate tile name '${t.name}'.` });
+    names.add(t.name);
     if (t.type === "UNKNOWN") out.push({ severity: "medium", rule: "unknown-tile-type", message: `Tile '${t.name}' has no recognizable type.` });
     const needsQuery = ["DATA_EXPLORER", "graph", "DQL", "custom_charting"].includes(t.type);
     if (needsQuery && !t.query) out.push({ severity: "low", rule: "empty-query", message: `Tile '${t.name}' is a chart with no query.` });

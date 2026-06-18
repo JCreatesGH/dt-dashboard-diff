@@ -39,6 +39,12 @@ describe("validate", () => {
     const d = parseDashboard({ name: "X", tiles: [{ id: "a", tileType: "MARKDOWN" }, { id: "a", tileType: "MARKDOWN" }] });
     expect(validate(d).some((i) => i.rule === "duplicate-tile-id")).toBe(true);
   });
+
+  it("flags duplicate tile names", () => {
+    const d = parseDashboard({ name: "X", tiles: [
+      { id: "a", name: "CPU", tileType: "MARKDOWN" }, { id: "b", name: "CPU", tileType: "MARKDOWN" }] });
+    expect(validate(d).some((i) => i.rule === "duplicate-tile-name")).toBe(true);
+  });
 });
 
 describe("diffDashboards", () => {
@@ -61,6 +67,16 @@ describe("diffDashboards", () => {
     expect(hasChanges(d)).toBe(true);
     expect(hasChanges(diffDashboards(parseDashboard(dev), parseDashboard(dev)))).toBe(false);
   });
+
+  it("detects a re-keyed tile (same content, new id) as a move, not add+remove", () => {
+    const before = { name: "D", tiles: [{ id: "old", name: "CPU", tileType: "DATA_EXPLORER", query: "fetch x" }] };
+    const after = { name: "D", tiles: [{ id: "new", name: "CPU", tileType: "DATA_EXPLORER", query: "fetch x" }] };
+    const md = diffDashboards(parseDashboard(before), parseDashboard(after));
+    expect(md.addedTiles).toEqual([]);
+    expect(md.removedTiles).toEqual([]);
+    expect(md.movedTiles).toEqual([{ fromId: "old", toId: "new", name: "CPU" }]);
+    expect(hasChanges(md)).toBe(true);
+  });
 });
 
 describe("renderDiff", () => {
@@ -73,6 +89,14 @@ describe("renderDiff", () => {
   });
   it("says so when nothing changed", () => {
     expect(renderDiff(diffDashboards(parseDashboard(dev), parseDashboard(dev)))).toBe("No changes.");
+  });
+
+  it("leads with a summary and shows re-keyed tiles", () => {
+    const before = { name: "D", tiles: [{ id: "old", name: "CPU", tileType: "DATA_EXPLORER", query: "q" }] };
+    const after = { name: "D", tiles: [{ id: "new", name: "CPU", tileType: "DATA_EXPLORER", query: "q" }] };
+    const out = renderDiff(diffDashboards(parseDashboard(before), parseDashboard(after)));
+    expect(out).toContain("1 re-keyed");
+    expect(out).toContain("» tile re-keyed old → new");
   });
 });
 
