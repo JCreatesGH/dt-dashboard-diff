@@ -18,6 +18,8 @@ export interface DashboardDiff {
   removedTiles: Tile[];
   movedTiles: MovedTile[];
   changedTiles: TileChange[];
+  // variable/filter key -> [before, after]; an absent side is `undefined` (add/remove).
+  variables: Record<string, [string | undefined, string | undefined]>;
 }
 
 const contentKey = (t: Tile) => JSON.stringify([t.name, t.type, t.query ?? null]);
@@ -58,12 +60,22 @@ export function diffDashboards(a: Dashboard, b: Dashboard): DashboardDiff {
       added.push(at);
     }
   }
-  return { metadata: meta, addedTiles: added, removedTiles: removedPool, movedTiles: moved, changedTiles: changed };
+  // Variable / default-filter drift, keyed by variable name.
+  const av = new Map(a.variables.map((v) => [v.key, v.value]));
+  const bv = new Map(b.variables.map((v) => [v.key, v.value]));
+  const variables: Record<string, [string | undefined, string | undefined]> = {};
+  for (const k of new Set([...av.keys(), ...bv.keys()])) {
+    if (av.get(k) !== bv.get(k)) variables[k] = [av.get(k), bv.get(k)];
+  }
+
+  return { metadata: meta, addedTiles: added, removedTiles: removedPool, movedTiles: moved,
+           changedTiles: changed, variables };
 }
 
 export function hasChanges(d: DashboardDiff): boolean {
   return Object.keys(d.metadata).length > 0 || d.addedTiles.length > 0 ||
-         d.removedTiles.length > 0 || d.movedTiles.length > 0 || d.changedTiles.length > 0;
+         d.removedTiles.length > 0 || d.movedTiles.length > 0 || d.changedTiles.length > 0 ||
+         Object.keys(d.variables).length > 0;
 }
 
 /** A compact, reviewable text summary of a diff (handy for PR comments). */
@@ -75,6 +87,7 @@ export function renderDiff(d: DashboardDiff): string {
   if (d.removedTiles.length) counts.push(`${d.removedTiles.length} removed`);
   if (d.movedTiles.length) counts.push(`${d.movedTiles.length} re-keyed`);
   if (d.changedTiles.length) counts.push(`${d.changedTiles.length} changed`);
+  if (Object.keys(d.variables).length) counts.push(`${Object.keys(d.variables).length} variable`);
   const lines: string[] = [counts.join(", ")];
   for (const [k, [before, after]] of Object.entries(d.metadata)) {
     lines.push(`~ ${k}: ${JSON.stringify(before)} → ${JSON.stringify(after)}`);
@@ -87,6 +100,11 @@ export function renderDiff(d: DashboardDiff): string {
     for (const [k, [before, after]] of Object.entries(c.fields)) {
       lines.push(`    ${k}: ${JSON.stringify(before)} → ${JSON.stringify(after)}`);
     }
+  }
+  for (const [k, [before, after]] of Object.entries(d.variables)) {
+    if (before === undefined) lines.push(`+ variable ${k}`);
+    else if (after === undefined) lines.push(`- variable ${k}`);
+    else lines.push(`~ variable ${k}`);
   }
   return lines.join("\n");
 }

@@ -3,6 +3,15 @@
 All notable changes are documented here, following
 [Keep a Changelog](https://keepachangelog.com/) and [SemVer](https://semver.org/).
 
+## [0.3.0]
+
+### Added
+- **Variable / default-filter diff** — `diffDashboards` now reports drift in dashboard variables
+  (Platform `variables`) and default filters (classic `dashboardFilter`/`filterConfig`) keyed by
+  name, as `variables: { key: [before, after] }`. A changed default — which silently changes what
+  every tile shows — surfaces in `hasChanges`, the JSON diff, and `renderDiff` (`+/-/~ variable`).
+  `parseDashboard` gained a normalized `variables` field and a `Variable` type.
+
 ## [0.2.0]
 
 ### Added

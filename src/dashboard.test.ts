@@ -77,6 +77,28 @@ describe("diffDashboards", () => {
     expect(md.movedTiles).toEqual([{ fromId: "old", toId: "new", name: "CPU" }]);
     expect(hasChanges(md)).toBe(true);
   });
+
+  it("diffs Platform variables (added / removed / changed)", () => {
+    const before = { name: "D", tiles: [{ id: "a", name: "t", tileType: "MARKDOWN" }],
+      variables: [{ key: "host", type: "query", input: "fetch hosts" }, { key: "env", type: "csv", values: ["dev"] }] };
+    const after = { name: "D", tiles: [{ id: "a", name: "t", tileType: "MARKDOWN" }],
+      variables: [{ key: "host", type: "query", input: "fetch hosts" },   // unchanged
+                  { key: "env", type: "csv", values: ["prod"] },           // changed
+                  { key: "region", type: "csv", values: ["us"] }] };       // added; "env" budget? no
+    const v = diffDashboards(parseDashboard(before), parseDashboard(after)).variables;
+    expect("host" in v).toBe(false);                 // unchanged -> not reported
+    expect(v.env[0]).not.toEqual(v.env[1]);          // changed
+    expect(v.region[0]).toBeUndefined();             // added
+  });
+
+  it("diffs classic dashboardFilter entries", () => {
+    const before = { name: "D", tiles: [{ id: "a", name: "t", tileType: "MARKDOWN" }],
+      dashboardFilter: { managementZone: { id: "1" } } };
+    const after = { name: "D", tiles: [{ id: "a", name: "t", tileType: "MARKDOWN" }], dashboardFilter: {} };
+    const v = diffDashboards(parseDashboard(before), parseDashboard(after)).variables;
+    expect(v.managementZone[1]).toBeUndefined();     // removed
+    expect(hasChanges(diffDashboards(parseDashboard(before), parseDashboard(after)))).toBe(true);
+  });
 });
 
 describe("renderDiff", () => {
@@ -97,6 +119,17 @@ describe("renderDiff", () => {
     const out = renderDiff(diffDashboards(parseDashboard(before), parseDashboard(after)));
     expect(out).toContain("1 re-keyed");
     expect(out).toContain("» tile re-keyed old → new");
+  });
+
+  it("summarizes variable drift", () => {
+    const before = { name: "D", tiles: [{ id: "a", name: "t", tileType: "MARKDOWN" }],
+      variables: [{ key: "env", type: "csv", values: ["dev"] }] };
+    const after = { name: "D", tiles: [{ id: "a", name: "t", tileType: "MARKDOWN" }],
+      variables: [{ key: "env", type: "csv", values: ["prod"] }, { key: "region", type: "csv" }] };
+    const out = renderDiff(diffDashboards(parseDashboard(before), parseDashboard(after)));
+    expect(out).toContain("variable");
+    expect(out).toContain("~ variable env");
+    expect(out).toContain("+ variable region");
   });
 });
 
